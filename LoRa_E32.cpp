@@ -1,5 +1,5 @@
 /*
- * EBYTE LoRa E32 Series
+ * Euint8_t LoRa E32 Series
  * https://www.mischianti.org/category/my-libraries/lora-e32-devices/
  *
  * The MIT License (MIT)
@@ -31,178 +31,52 @@
 
 #include "LoRa_E32.h"
 
-#ifdef ACTIVATE_SOFTWARE_SERIAL
-LoRa_E32::LoRa_E32(byte txE32pin, byte rxE32pin, UART_BPS_RATE bpsRate){
-    this->txE32pin = txE32pin;
-    this->rxE32pin = rxE32pin;
-    SoftwareSerial* mySerial = new SoftwareSerial((uint8_t)this->txE32pin, (uint8_t)this->rxE32pin); // "RX TX" // @suppress("Abstract class cannot be instantiated")
-    this->ss = mySerial;
-    this->hs = NULL;
+#include "hardware/gpio.h"
+#include "hardware/uart.h"
+#include "pico/time.h"
 
-    this->bpsRate = bpsRate;
-}
-LoRa_E32::LoRa_E32(byte txE32pin, byte rxE32pin, byte auxPin, UART_BPS_RATE bpsRate){
-    this->txE32pin = txE32pin;
-    this->rxE32pin = rxE32pin;
-    this->auxPin = auxPin;
-    SoftwareSerial* mySerial = new SoftwareSerial((uint8_t)this->txE32pin, (uint8_t)this->rxE32pin); // "RX TX" // @suppress("Abstract class cannot be instantiated")
-    this->ss = mySerial;
-    this->hs = NULL;
+#include <string.h>
 
-    this->bpsRate = bpsRate;
-}
-LoRa_E32::LoRa_E32(byte txE32pin, byte rxE32pin, byte auxPin, byte m0Pin, byte m1Pin, UART_BPS_RATE bpsRate){
-    this->txE32pin = txE32pin;
-    this->rxE32pin = rxE32pin;
 
-    this->auxPin = auxPin;
+#define millis()\
+to_ms_since_boot (get_absolute_time())
+ 
 
-    this->m0Pin = m0Pin;
-    this->m1Pin = m1Pin;
+#define INPUT	GPIO_IN
+#define OUTPUT	GPIO_OUT
 
-    SoftwareSerial* mySerial = new SoftwareSerial((uint8_t)this->txE32pin, (uint8_t)this->rxE32pin); // "RX TX" // @suppress("Abstract class cannot be instantiated")
-    this->ss = mySerial;
-    this->hs = NULL;
+#define pinMode(pin, mode)\
+gpio_init(pin);\
+gpio_set_dir(pin, mode)
 
-    this->bpsRate = bpsRate;
-}
-#endif
+#define digitalWrite(pin, val)\
+gpio_put(pin, val)
 
-LoRa_E32::LoRa_E32(HardwareSerial* serial, UART_BPS_RATE bpsRate){ //, uint32_t serialConfig
-    this->txE32pin = txE32pin;
-    this->rxE32pin = rxE32pin;
+#define digitalRead(pin)\
+gpio_get(pin)
 
-	#ifdef ACTIVATE_SOFTWARE_SERIAL
-    	this->ss = NULL;
-	#endif
+#define m64(val) (((uint64_t)(val)))
+#define ONE (m64(1))
 
-    this->hs = serial;
+#define bitRead(val, bitNo)\
+(m64(val) & (ONE << bitNo))
 
-//    this->serialConfig = serialConfig;
+#define HIGH 1
+#define LOW 0
 
-    this->bpsRate = bpsRate;
-}
-LoRa_E32::LoRa_E32(HardwareSerial* serial, byte auxPin, UART_BPS_RATE bpsRate){ // , uint32_t serialConfig
-    this->txE32pin = txE32pin;
-    this->rxE32pin = rxE32pin;
-    this->auxPin = auxPin;
 
-	#ifdef ACTIVATE_SOFTWARE_SERIAL
-		this->ss = NULL;
-	#endif
 
-	this->hs = serial;
-
-//    this->serialConfig = serialConfig;
-
-    this->bpsRate = bpsRate;
-}
-LoRa_E32::LoRa_E32(HardwareSerial* serial, byte auxPin, byte m0Pin, byte m1Pin, UART_BPS_RATE bpsRate){ //, uint32_t serialConfig
-    this->txE32pin = txE32pin;
-    this->rxE32pin = rxE32pin;
-
+LoRa_E32::LoRa_E32(HardwareSerial* serial, uint8_t auxPin, uint8_t m0Pin, uint8_t m1Pin, UART_BPS_RATE bpsRate){ //, uint32_t serialConfig
     this->auxPin = auxPin;
 
     this->m0Pin = m0Pin;
     this->m1Pin = m1Pin;
 
-	#ifdef ACTIVATE_SOFTWARE_SERIAL
-		this->ss = NULL;
-	#endif
-
-    this->hs = serial;
-//    this->serialConfig = serialConfig;
-
-    this->bpsRate = bpsRate;
-}
-
-#ifdef HARDWARE_SERIAL_SELECTABLE_PIN
-LoRa_E32::LoRa_E32(byte txE32pin, byte rxE32pin, HardwareSerial* serial, UART_BPS_RATE bpsRate, uint32_t serialConfig){
-    this->txE32pin = txE32pin;
-    this->rxE32pin = rxE32pin;
-
-	#ifdef ACTIVATE_SOFTWARE_SERIAL
-    	this->ss = NULL;
-	#endif
-
-    this->serialConfig = serialConfig;
-
     this->hs = serial;
 
     this->bpsRate = bpsRate;
 }
-LoRa_E32::LoRa_E32(byte txE32pin, byte rxE32pin, HardwareSerial* serial, byte auxPin, UART_BPS_RATE bpsRate, uint32_t serialConfig){
-    this->txE32pin = txE32pin;
-    this->rxE32pin = rxE32pin;
-    this->auxPin = auxPin;
 
-	#ifdef ACTIVATE_SOFTWARE_SERIAL
-		this->ss = NULL;
-	#endif
-
-	this->serialConfig = serialConfig;
-
-	this->hs = serial;
-
-    this->bpsRate = bpsRate;
-}
-LoRa_E32::LoRa_E32(byte txE32pin, byte rxE32pin, HardwareSerial* serial, byte auxPin, byte m0Pin, byte m1Pin, UART_BPS_RATE bpsRate, uint32_t serialConfig){
-    this->txE32pin = txE32pin;
-    this->rxE32pin = rxE32pin;
-
-    this->auxPin = auxPin;
-
-    this->m0Pin = m0Pin;
-    this->m1Pin = m1Pin;
-
-	#ifdef ACTIVATE_SOFTWARE_SERIAL
-		this->ss = NULL;
-	#endif
-
-	this->serialConfig = serialConfig;
-
-    this->hs = serial;
-
-    this->bpsRate = bpsRate;
-}
-#endif
-
-#ifdef ACTIVATE_SOFTWARE_SERIAL
-
-LoRa_E32::LoRa_E32(SoftwareSerial* serial, UART_BPS_RATE bpsRate){
-    this->txE32pin = txE32pin;
-    this->rxE32pin = rxE32pin;
-
-    this->ss = serial;
-    this->hs = NULL;
-
-    this->bpsRate = bpsRate;
-}
-LoRa_E32::LoRa_E32(SoftwareSerial* serial, byte auxPin, UART_BPS_RATE bpsRate){
-    this->txE32pin = txE32pin;
-    this->rxE32pin = rxE32pin;
-    this->auxPin = auxPin;
-
-    this->ss = serial;
-    this->hs = NULL;
-
-    this->bpsRate = bpsRate;
-}
-LoRa_E32::LoRa_E32(SoftwareSerial* serial, byte auxPin, byte m0Pin, byte m1Pin, UART_BPS_RATE bpsRate){
-    this->txE32pin = txE32pin;
-    this->rxE32pin = rxE32pin;
-
-    this->auxPin = auxPin;
-
-    this->m0Pin = m0Pin;
-    this->m1Pin = m1Pin;
-
-    this->ss = serial;
-    this->hs = NULL;
-
-    this->bpsRate = bpsRate;
-}
-#endif
 
 bool LoRa_E32::begin(){
 	DEBUG_PRINT("RX MIC ---> ");
@@ -234,44 +108,9 @@ bool LoRa_E32::begin(){
 	}
 
     DEBUG_PRINTLN("Begin ex");
-    if (this->hs){
-        DEBUG_PRINTLN("Begin Hardware Serial");
 
-#ifdef HARDWARE_SERIAL_SELECTABLE_PIN
-        if(this->txE32pin != -1 && this->rxE32pin != -1) {
-			this->serialDef.begin(*this->hs, this->bpsRate, this->serialConfig, this->txE32pin, this->rxE32pin);
-		}else{
-			this->serialDef.begin(*this->hs, this->bpsRate, this->serialConfig);
-		}
-#endif
-#ifndef HARDWARE_SERIAL_SELECTABLE_PIN
-        this->serialDef.begin(*this->hs, this->bpsRate);
-#endif
-        while (!this->hs) {
-          ; // wait for serial port to connect. Needed for native USB
-        }
+	uart_set_baudrate(this->hs, this->bpsRate);
 
-#ifdef ACTIVATE_SOFTWARE_SERIAL
-    }else if (this->ss){
-        DEBUG_PRINTLN("Begin Software Serial");
-
-		this->serialDef.begin(*this->ss, this->bpsRate);
-	}	else{
-        DEBUG_PRINTLN("Begin Software Serial Pin");
-        SoftwareSerial* mySerial = new SoftwareSerial((int)this->txE32pin, (int)this->rxE32pin); // "RX TX" // @suppress("Abstract class cannot be instantiated")
-        this->ss = mySerial;
-
-//		SoftwareSerial mySerial(this->txE32pin, this->rxE32pin);
-        DEBUG_PRINT("RX Pin: ");
-        DEBUG_PRINT((int)this->txE32pin);
-        DEBUG_PRINT("TX Pin: ");
-        DEBUG_PRINTLN((int)this->rxE32pin);
-
-		this->serialDef.begin(*this->ss, this->bpsRate);
-#endif
-	}
-
-    this->serialDef.stream->setTimeout(1000);
     Status status = setMode(MODE_0_NORMAL);
     return status==E32_SUCCESS;
 }
@@ -343,62 +182,6 @@ void LoRa_E32::managedDelay(unsigned long timeout) {
 
 /*
 
-Method to indicate availability
-
-*/
-
-int LoRa_E32::available() {
-//	unsigned long t = millis();
-//
-//	// make darn sure millis() is not about to reach max data type limit and start over
-//	if (((unsigned long) (t + timeout)) == 0){
-//		t = 0;
-//	}
-//
-//	if (this->auxPin != -1) {
-//		if (digitalRead(this->auxPin) == HIGH){
-//			return 0;
-//		}else{
-//			while (digitalRead(this->auxPin) == LOW) {
-//				if ((millis() - t) > timeout){
-//					DEBUG_PRINTLN("Timeout error!");
-//					return 0;
-//				}
-//			}
-//			DEBUG_PRINTLN("AUX HIGH!");
-//			return 2;
-//		}
-//	}else{
-		return this->serialDef.stream->available();
-//	}
-}
-
-/*
-
-Method to indicate availability
-
-*/
-
-void LoRa_E32::flush() {
-	this->serialDef.stream->flush();
-}
-
-
-void LoRa_E32::cleanUARTBuffer()
-{
-//  bool IsNull = true;
-
-  while (this->available())
-  {
-//    IsNull = false;
-
-    this->serialDef.stream->read();
-  }
-}
-
-
-/*
-
 Method to send a chunk of data provided data is in a struct--my personal favorite as you
 need not parse or worry about sprintf() inability to handle floats
 
@@ -417,24 +200,14 @@ Status LoRa_E32::sendStruct(void *structureManaged, uint16_t size_) {
 
 		Status result = E32_SUCCESS;
 
-		uint8_t len = this->serialDef.stream->write((uint8_t *) structureManaged, size_);
-		if (len!=size_){
-			DEBUG_PRINT(F("Send... len:"))
-			DEBUG_PRINT(len);
-			DEBUG_PRINT(F(" size:"))
-			DEBUG_PRINT(size_);
-			if (len==0){
-				result = ERR_E32_NO_RESPONSE_FROM_DEVICE;
-			}else{
-				result = ERR_E32_DATA_SIZE_NOT_MATCH;
-			}
+		uint8_t* ch = (uint8_t *) structureManaged;
+
+		for(int i = 0 ; i < size_ ; i++){
+			uart_putc_raw(this->hs, ch[i]);
 		}
-		if (result != E32_SUCCESS) return result;
 
 		result = this->waitCompleteResponse(1000);
 		if (result != E32_SUCCESS) return result;
-		DEBUG_PRINT(F("Clear buffer..."))
-		this->cleanUARTBuffer();
 
 		DEBUG_PRINTLN(F("ok!"))
 
@@ -459,21 +232,11 @@ types each handle ints floats differently
 Status LoRa_E32::receiveStruct(void *structureManaged, uint16_t size_) {
 	Status result = E32_SUCCESS;
 
-	uint8_t len = this->serialDef.stream->readBytes((uint8_t *) structureManaged, size_);
+	uint8_t* ch = (uint8_t *) structureManaged;
 
-	DEBUG_PRINT("Available buffer: ");
-	DEBUG_PRINT(len);
-	DEBUG_PRINT(" structure size: ");
-	DEBUG_PRINTLN(size_);
-
-	if (len!=size_){
-		if (len==0){
-			result = ERR_E32_NO_RESPONSE_FROM_DEVICE;
-		}else{
-			result = ERR_E32_DATA_SIZE_NOT_MATCH;
-		}
+	for(int i = 0; i < size_; i++){
+		ch[i] = uart_getc(this->hs);
 	}
-	if (result != E32_SUCCESS) return result;
 
 	result = this->waitCompleteResponse(1000);
 	if (result != E32_SUCCESS) return result;
@@ -546,7 +309,10 @@ MODE_TYPE LoRa_E32::getMode(){
 void LoRa_E32::writeProgramCommand(PROGRAM_COMMAND cmd){
 	  uint8_t CMD[3] = {cmd, cmd, cmd};
 	  // uint8_t size =
-	  this->serialDef.stream->write(CMD, 3);
+		for(int i = 0 ; i < 3 ; i++){
+			uart_putc_raw(this->hs, CMD[i]);
+		}
+
 	  this->managedDelay(50);  //need ti check
 }
 
@@ -705,45 +471,8 @@ ResponseStatus LoRa_E32::resetModule(){
 	return status;
 }
 
-ResponseContainer LoRa_E32::receiveMessage(){
-	ResponseContainer rc;
-	rc.status.code = E32_SUCCESS;
-	rc.data = this->serialDef.stream->readString();
-	this->cleanUARTBuffer();
-	if (rc.status.code!=E32_SUCCESS) {
-		return rc;
-	}
 
-//	rc.data = message; // malloc(sizeof (moduleInformation));
-
-	return rc;
-}
-ResponseContainer LoRa_E32::receiveMessageUntil(char delimiter){
-	ResponseContainer rc;
-	rc.status.code = E32_SUCCESS;
-	rc.data = this->serialDef.stream->readStringUntil(delimiter);
-//	this->cleanUARTBuffer();
-	if (rc.status.code!=E32_SUCCESS) {
-		return rc;
-	}
-
-//	rc.data = message; // malloc(sizeof (moduleInformation));
-
-	return rc;
-}
-ResponseStructContainer LoRa_E32::receiveMessage(const uint8_t size){
-	ResponseStructContainer rc;
-
-	rc.data = malloc(size);
-	rc.status.code = this->receiveStruct((uint8_t *)rc.data, size);
-	this->cleanUARTBuffer();
-	if (rc.status.code!=E32_SUCCESS) {
-		return rc;
-	}
-
-	return rc;
-}
-
+#pragma pack(push, 1)
 ResponseStatus LoRa_E32::sendMessage(const void *message, const uint8_t size){
 	ResponseStatus status;
 	status.code = this->sendStruct((uint8_t *)message, size);
@@ -751,101 +480,28 @@ ResponseStatus LoRa_E32::sendMessage(const void *message, const uint8_t size){
 
 	return status;
 }
-ResponseStatus LoRa_E32::sendMessage(const String message){
-	DEBUG_PRINT(F("Send message: "));
-	DEBUG_PRINT(message);
-	byte size = message.length(); // sizeof(message.c_str())+1;
-	DEBUG_PRINT(F(" size: "));
-	DEBUG_PRINTLN(size);
-	char messageFixed[size];
-	memcpy(messageFixed,message.c_str(),size);
-	DEBUG_PRINTLN(F(" memcpy "));
-
-	ResponseStatus status;
-	status.code = this->sendStruct((uint8_t *)&messageFixed, size);
-	if (status.code!=E32_SUCCESS) return status;
-
-	return status;
-}
-
-ResponseStatus LoRa_E32::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, const String message){
-//	DEBUG_PRINT("String/size: ");
-//	DEBUG_PRINT(message);
-//	DEBUG_PRINT("/");
-	byte size = message.length(); // sizeof(message.c_str())+1;
-//	DEBUG_PRINTLN(size);
-//
-//	#pragma pack(push, 1)
-//	struct FixedStransmissionString {
-//		byte ADDH = 0;
-//		byte ADDL = 0;
-//		byte CHAN = 0;
-//		char message[];
-//	} fixedStransmission;
-//	#pragma pack(pop)
-//
-//	fixedStransmission.ADDH = ADDH;
-//	fixedStransmission.ADDL = ADDL;
-//	fixedStransmission.CHAN = CHAN;
-//	char* msg = (char*)message.c_str();
-//	memcpy(fixedStransmission.message, (char*)msg, size);
-////	fixedStransmission.message = message;
-//
-//	DEBUG_PRINT("Message: ");
-//	DEBUG_PRINTLN(fixedStransmission.message);
-//
-//	ResponseStatus status;
-//	status.code = this->sendStruct((uint8_t *)&fixedStransmission, sizeof(fixedStransmission));
-//	if (status.code!=E32_SUCCESS) return status;
-//
-//	return status;
-	char messageFixed[size];
-	memcpy(messageFixed,message.c_str(),size);
-	return this->sendFixedMessage(ADDH, ADDL, CHAN, (uint8_t *)messageFixed, size);
-}
-ResponseStatus LoRa_E32::sendBroadcastFixedMessage(byte CHAN, const String message){
-	return this->sendFixedMessage(BROADCAST_ADDRESS, BROADCAST_ADDRESS, CHAN, message);
-}
 
 typedef struct fixedStransmission
 {
-	byte ADDH = 0;
-	byte ADDL = 0;
-	byte CHAN = 0;
+	uint8_t ADDH = 0;
+	uint8_t ADDL = 0;
+	uint8_t CHAN = 0;
 	unsigned char message[];
 }FixedStransmission;
+#pragma pack(pop)
+
 
 FixedStransmission *init_stack(int m){
 	FixedStransmission *st = (FixedStransmission *)malloc(sizeof(FixedStransmission)+m*sizeof(int));
     return st;
 }
 
-ResponseStatus LoRa_E32::sendFixedMessage( byte ADDH,byte ADDL, byte CHAN, const void *message, const uint8_t size){
-//	#pragma pack(push, 1)
-//	struct FixedStransmission {
-//		byte ADDH = 0;
-//		byte ADDL = 0;
-//		byte CHAN = 0;
-//		unsigned char message[];
-//	} fixedStransmission;
-//	#pragma pack(pop)
-
-
+ResponseStatus LoRa_E32::sendFixedMessage( uint8_t ADDH,uint8_t ADDL, uint8_t CHAN, const void *message, const uint8_t size){
 	FixedStransmission *fixedStransmission = init_stack(size);
-
-//	STACK *resize_stack(STACK *st, int m){
-//	    if (m<=st->max){
-//	         return st; /* Take sure do not kill old values */
-//	    }
-//	    STACK *st = (STACK *)realloc(sizeof(STACK)+m*sizeof(int));
-//	    st->max = m;
-//	    return st;
-//	}
 
 	fixedStransmission->ADDH = ADDH;
 	fixedStransmission->ADDL = ADDL;
 	fixedStransmission->CHAN = CHAN;
-//	fixedStransmission.message = &message;
 
 	memcpy(fixedStransmission->message,(unsigned char*)message,size);
 
@@ -858,28 +514,10 @@ ResponseStatus LoRa_E32::sendFixedMessage( byte ADDH,byte ADDL, byte CHAN, const
 
 	return status;
 }
-ResponseStatus LoRa_E32::sendBroadcastFixedMessage(byte CHAN, const void *message, const uint8_t size){
+ResponseStatus LoRa_E32::sendBroadcastFixedMessage(uint8_t CHAN, const void *message, const uint8_t size){
 	return this->sendFixedMessage(0xFF, 0xFF, CHAN, message, size);
 }
 
-ResponseContainer LoRa_E32::receiveInitialMessage(uint8_t size){
-	ResponseContainer rc;
-	rc.status.code = E32_SUCCESS;
-	char buff[size];
-	uint8_t len = this->serialDef.stream->readBytes(buff, size);
-	if (len!=size) {
-		if (len==0){
-			rc.status.code = ERR_E32_NO_RESPONSE_FROM_DEVICE;
-		}else{
-			rc.status.code = ERR_E32_DATA_SIZE_NOT_MATCH;
-		}
-		return rc;
-	}
-
-	rc.data = buff;
-
-	return rc;
-}
 
 #define KeeLoq_NLF		0x3A5C742E
 

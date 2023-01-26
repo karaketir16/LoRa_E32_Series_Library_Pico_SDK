@@ -1,4 +1,12 @@
-#include "Arduino.h"
+#ifndef _STATESNAMING_HEADER
+#define _STATESNAMING_HEADER 
+
+#include <stdint.h>
+#include <string>
+
+#define FREQUENCY_868
+
+#define F(x) (x)
 
 #ifdef FREQUENCY_433
 	#define OPERATING_FREQUENCY 410
@@ -36,7 +44,7 @@ typedef enum RESPONSE_STATUS {
   ERR_E32_PACKET_TOO_BIG
 } Status;
 
-static String getResponseDescriptionByParams(byte status){
+static std::string getResponseDescriptionByParams(uint8_t status){
 	switch (status)
 	{
 	  case E32_SUCCESS:
@@ -79,7 +87,7 @@ static String getResponseDescriptionByParams(byte status){
 		return F("Wrong UART configuration! (BPS must be 9600 for configuration)");
 		break;
 	  case ERR_E32_PACKET_TOO_BIG:
-		return F("The device support only 58byte of data transmission!");
+		return F("The device support only 58uint8_t of data transmission!");
 		break;
 	  default:
 		return F("Invalid status!");
@@ -94,7 +102,7 @@ enum UART_PARITY
   MODE_11_8N1 = 0b11
 };
 
-static String getUARTParityDescriptionByParams(byte uartParity){
+static std::string getUARTParityDescriptionByParams(uint8_t uartParity){
 	switch (uartParity)
 	{
 	  case MODE_00_8N1:
@@ -138,7 +146,7 @@ enum UART_BPS_RATE
   UART_BPS_RATE_115200 = 115200
 };
 
-static String getUARTBaudRateDescriptionByParams(byte uartBaudRate)
+static std::string getUARTBaudRateDescriptionByParams(uint8_t uartBaudRate)
 {
 	switch (uartBaudRate)
 	{
@@ -184,7 +192,7 @@ enum AIR_DATA_RATE
 };
 
 
-static String getAirDataRateDescriptionByParams(byte airDataRate)
+static std::string getAirDataRateDescriptionByParams(uint8_t airDataRate)
 {
 	switch (airDataRate)
 	{
@@ -225,7 +233,7 @@ enum FIDEX_TRANSMISSION
 };
 
 
-static String getFixedTransmissionDescriptionByParams(byte fixedTransmission)
+static std::string getFixedTransmissionDescriptionByParams(uint8_t fixedTransmission)
 {
 	switch (fixedTransmission)
 	{
@@ -248,7 +256,7 @@ enum IO_DRIVE_MODE
 };
 
 
-static String getIODriveModeDescriptionDescriptionByParams(byte ioDriveMode)
+static std::string getIODriveModeDescriptionDescriptionByParams(uint8_t ioDriveMode)
 {
 	switch (ioDriveMode)
 	{
@@ -276,7 +284,7 @@ enum WIRELESS_WAKE_UP_TIME
 };
 
 
-static String getWirelessWakeUPTimeDescriptionByParams(byte wirelessWakeUPTime)
+static std::string getWirelessWakeUPTimeDescriptionByParams(uint8_t wirelessWakeUPTime)
 {
 	switch (wirelessWakeUPTime)
 	{
@@ -315,7 +323,7 @@ enum FORWARD_ERROR_CORRECTION_SWITCH
 };
 
 
-static String getFECDescriptionByParams(byte fec)
+static std::string getFECDescriptionByParams(uint8_t fec)
 {
 	switch (fec)
 	{
@@ -340,7 +348,7 @@ static String getFECDescriptionByParams(byte fec)
 
 	};
 
-	static String getTransmissionPowerDescriptionByParams(byte transmissionPower)
+	static std::string getTransmissionPowerDescriptionByParams(uint8_t transmissionPower)
 	{
 		switch (transmissionPower)
 		{
@@ -370,7 +378,7 @@ static String getFECDescriptionByParams(byte fec)
 
 	};
 
-	static String getTransmissionPowerDescriptionByParams(byte transmissionPower)
+	static std::string getTransmissionPowerDescriptionByParams(uint8_t transmissionPower)
 	{
 		switch (transmissionPower)
 		{
@@ -400,7 +408,7 @@ static String getFECDescriptionByParams(byte fec)
 
 	};
 
-	static String getTransmissionPowerDescriptionByParams(byte transmissionPower)
+	static std::string getTransmissionPowerDescriptionByParams(uint8_t transmissionPower)
 	{
 		switch (transmissionPower)
 		{
@@ -430,7 +438,7 @@ static String getFECDescriptionByParams(byte fec)
 
 	};
 
-	static String getTransmissionPowerDescriptionByParams(byte transmissionPower)
+	static std::string getTransmissionPowerDescriptionByParams(uint8_t transmissionPower)
 	{
 		switch (transmissionPower)
 		{
@@ -450,4 +458,9 @@ static String getFECDescriptionByParams(byte fec)
 			return F("Invalid transmission power param");
 		}
 	}
+#endif
+
+
+#undef F
+
 #endif
